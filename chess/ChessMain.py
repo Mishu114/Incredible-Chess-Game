@@ -1,5 +1,5 @@
 import pygame as p
-from  chess import ChessEngine
+from  chess import ChessEngine,SmartMoveFinder
 
 WIDTH = HEIGHT = 512 #400 dileo valo
 DIMENSION = 8
@@ -20,41 +20,83 @@ def main():
     gs = ChessEngine.GameState()
     validMoves = gs.getValidMoves()
     moveMade = False
+    animate = True
     loadImages()
     running = True
     sqSelected = () #[tuple:(r,c)]
     playerClicks = [] # (r1,c1) --> (r2,c2)
+    playerOne = True
+    playerTwo = False
+    gameOver = False
+    firstMove = True
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
+
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos() # mouse er (x,y) location
-                col = location[0]//SQ_SIZE
-                row = location[1]//SQ_SIZE
+                if not gameOver and humanTurn:
+                    location = p.mouse.get_pos() # mouse er (x,y) location
+                    col = location[0]//SQ_SIZE
+                    row = location[1]//SQ_SIZE
 
-                if sqSelected == (row,col):
-                    sqSelected = ()
-                    playerClicks =[]
-                else:
-                    sqSelected = (row,col)
-                    playerClicks.append(sqSelected)
+                    if sqSelected == (row,col):
+                        sqSelected = ()
+                        playerClicks =[]
+                    else:
+                        sqSelected = (row,col)
+                        playerClicks.append(sqSelected)
+                    if len(playerClicks)==2:
+                        move = ChessEngine.Move(playerClicks[0],playerClicks[1],gs.board)
+                        if move in validMoves:
+                            gs.makeMove(move)
+                            moveMade = True
+                        sqSelected = ()
+                        playerClicks = []
 
-
-                if len(playerClicks)==2:
-                    move = ChessEngine.Move(playerClicks[0],playerClicks[1],gs.board)
-                    if move in validMoves:
-                        gs.makeMove(move)
-                        moveMade = True
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_r:
+                    gs = ChessEngine.GameState()
+                    validMoves = gs.getValidMoves()
                     sqSelected = ()
                     playerClicks = []
-            if moveMade:
+                    moveMade = False
+
+        #AI move
+        if not gameOver and not humanTurn:
+            board = gs.board
+            sum=0
+            for c in range(len(board)):
+                for r in range(len(board)):
+                    if board[r][c] == 'bp':
+                        break
+                for r2 in range (r+1,len(board)):
+                    if board[r2][c] == 'wp':
+                        break
+                sum = sum + (r2-r-1)
+
+            print(sum)
+            AIMove = SmartMoveFinder.findBestMove(validMoves,sum)
+            gs.makeMove(AIMove)
+            moveMade = True
+
+        if moveMade:
+            if animate:
                 animateMove(gs.moveLog[-1],screen,gs.board,clock)
-                validMoves = gs.getValidMoves()
-                moveMade = False
-            drawGameState(screen,gs, validMoves,sqSelected)
-            clock.tick(MAX_FPS)
-            p.display.flip()
+            validMoves = gs.getValidMoves()
+            moveMade = False
+        drawGameState(screen,gs, validMoves,sqSelected)
+
+        if gs.checkmate:
+            gameOver = True
+            if gs.whiteToMove:
+                drawText(screen,'Black Won')
+            else:
+                drawText(screen, 'White Won')
+
+        clock.tick(MAX_FPS)
+        p.display.flip()
 
 
 def highlightSquares(screen,gs, validMoves, sqSelected):
@@ -111,6 +153,14 @@ def animateMove (move, screen, board, clock):
         screen.blit(IMAGES[move.pieceMoved],p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         p.display.flip()
         clock.tick(60)
+
+def drawText(screen, text):
+    font = p.font.SysFont("Helvitca",32,True,False)
+    textObject = font.render(text,0,p.Color('Gray'))
+    textLocation = p.Rect(0,0,WIDTH,HEIGHT).move(WIDTH/2 - textObject.get_width()/2,HEIGHT/2 - textObject.get_height()/2)
+    screen.blit(textObject,textLocation)
+    textObject = font.render(text,0,p.Color('Black'))
+    screen.blit(textObject,textLocation.move(2,2))
 
 
 if __name__ == "__main__":

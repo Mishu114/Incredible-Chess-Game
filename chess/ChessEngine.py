@@ -1,6 +1,7 @@
+import random
 class GameState():
     def __init__(self):
-        self.board = [
+        bb = [
             ["--","--","--","--","--","--","--","--"],
             ["bp","bp","bp","bp","bp","bp","bp","bp"],
             ["--","--","--","--","--","--","--","--"],
@@ -10,8 +11,24 @@ class GameState():
             ["wp","wp","wp","wp","wp","wp","wp","wp"],
             ["--","--","--","--","--","--","--","--"]
         ]
+        sum=1
+        while sum%3!=0:
+            sum=0
+            for i in range (8):
+                x = random.randint(0,3)
+                y = random.randint(x+1,7)
+                sum = sum + (y-x-1)
+                for j in range(8):
+                    if j==x:
+                        bb[j][i]="bp"
+                    elif j==y:
+                        bb[j][i]="wp"
+                    else:
+                        bb[j][i]="--"
+        self.board = bb
         self.whiteToMove = True
         self.moveLog = []
+        self.checkmate = False
 
     def makeMove(self,move):
         self.board[move.startRow][move.startCol] = "--"
@@ -29,6 +46,8 @@ class GameState():
                 turn = self.board[r][c][0]
                 if (turn == 'w' and self.whiteToMove) or (turn=='b' and not self.whiteToMove):
                     self.getPawnMoves(r,c,moves)
+        if len(moves)==0:
+            self.checkmate = True
         return moves
 
     def getPawnMoves(self,r,c,moves):
