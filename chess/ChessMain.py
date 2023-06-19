@@ -1,7 +1,7 @@
 import pygame as p
 from  chess import ChessEngine,SmartMoveFinder
 
-WIDTH = HEIGHT = 512 #400 dileo valo
+WIDTH = HEIGHT = 680 #400 dileo valo
 DIMENSION = 8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15 # animation er jnno
@@ -31,7 +31,6 @@ def main():
     firstMove = True
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
-
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
@@ -66,8 +65,11 @@ def main():
         #AI move
         if not gameOver and not humanTurn:
             board = gs.board
-            sum=0
+            space = []
+            sum =0
             for c in range(len(board)):
+                r = 0
+                r2 = 0
                 for r in range(len(board)):
                     if board[r][c] == 'bp':
                         break
@@ -75,9 +77,10 @@ def main():
                     if board[r2][c] == 'wp':
                         break
                 sum = sum + (r2-r-1)
+                space.append(r2-r-1)
 
             print(sum)
-            AIMove = SmartMoveFinder.findBestMove(validMoves,sum)
+            AIMove = SmartMoveFinder.findBestMove(validMoves,space)
             gs.makeMove(AIMove)
             moveMade = True
 
